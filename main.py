@@ -28,7 +28,7 @@ client = Client(api_key, api_secret)
 exch_rate_list = []
 qtt_rate_list = []
 tri_sym_list = []
-fee = 0.000
+fee = 0.00
 start_amount = 0
 
 list_of_symbols2 = ['BNBBTC', 'ADABNB', 'ADABTC']
@@ -376,6 +376,15 @@ def run():
     welcome_message = "\n(*) Bot Start Time: {}\n".format(bot_start_time)
     print(welcome_message)
     notify.send(welcome_message)
+
+    btc_begin = client.get_asset_balance(asset='BTC')["free"]
+    bnb_begin = client.get_asset_balance(asset='BNB')["free"]
+    eth_begin = client.get_asset_balance(asset='ETH')["free"]
+    print('(*) Account Detail')
+    print('\tBTC : ' + str(btc_begin))
+    print('\tBNB : ' + str(bnb_begin))
+    print('\tETH : ' + str(eth_begin))
+    print('\tFEE : {}%\n'.format(fee*100))
     while 1:
         try:
             initialize_arb()
@@ -384,6 +393,14 @@ def run():
                 qtt_rate_list.clear()
                 os.system('cls')
                 try:
+                    print('(*) Account Detail')
+                    btc_current = client.get_asset_balance(asset='BTC')["free"]
+                    bnb_current = client.get_asset_balance(asset='BNB')["free"]
+                    eth_current = client.get_asset_balance(asset='ETH')["free"]
+                    print('\tBTC : {} ({}%)'.format(btc_current,(float(btc_current)-float(btc_begin))*100/float(btc_begin)))
+                    print('\tBNB : {} ({}%)'.format(bnb_current,(float(bnb_current)-float(bnb_begin))*100/float(bnb_begin)))
+                    print('\tETH : {} ({}%)'.format(eth_current,(float(eth_current)-float(eth_begin))*100/float(eth_begin)))
+                    print('\tFEE : {}%\n'.format(fee*100))
                     tickers = 0
                     arbitrage_bin(symlistCnt, tickers, 1, 1)
                     if profit_cal(symlistCnt,get_amout()) == True:
@@ -443,7 +460,7 @@ def initialize_arb():
 def get_amout():
     bnb_balance = float(int(float(client.get_asset_balance(asset='BNB')["free"])*100)/100)
     start_amount = bnb_balance
-    #print("start_amount = {} BNB".format(start_amount))
+    print("start_amount = {} BNB".format(start_amount))
     return start_amount
 
 def profit_cal(list_of_sym,start_amount):
@@ -488,17 +505,15 @@ def profit_cal(list_of_sym,start_amount):
         notify.send(tri_arb_paper_msg)
 
         #Quantity check
-        if (amt_coin3 >= qtt_rate_list[1] or amt_coin3 >= qtt_rate_list[2] ):
-            notify.send("QTT Check fail.")
-            pass
-
+        if ((amt_coin3 >= qtt_rate_list[1]) or (amt_coin3 >= qtt_rate_list[2])):
+            raise Exception("QTT Check fail.")
 
         """1ST TRADE"""
         print("order1 = client.order_limit_sell(\n\tsymbol=\'"+str(list_of_sym[0])+'\',\n\t'+'quantity='+str(start_amount)+',\n\t'+'price=\''+str(float(exch_rate_list[0]))+'\')\n')
-        """client.order_limit_sell(
+        client.order_limit_sell(
             symbol=str(list_of_sym[0]),
             quantity=start_amount,
-            price=str(float(exch_rate_list[0])))  """
+            price=str(float(exch_rate_list[0])))
         notify.send("order1 = client.order_limit_sell(\n\tsymbol=\'"+str(list_of_sym[0])+'\',\n\t'+'quantity='+str(start_amount)+',\n\t'+'price=\''+str(float(exch_rate_list[0]))+'\')\n')
 
         while bool(client.get_open_orders(symbol=str(list_of_sym[0]))):
@@ -506,10 +521,10 @@ def profit_cal(list_of_sym,start_amount):
         
         """2ND TRADE"""
         print("order2 = client.order_limit_buy(\n\tsymbol=\'"+str(list_of_sym[2])+'\',\n\t'+'quantity='+str(int(amt_coin3))+',\n\t'+'price=\''+float_to_str(exch_rate_list[2])+'\')\n')
-        """client.order_limit_buy(
+        client.order_limit_buy(
             symbol=str(list_of_sym[2]),
             quantity=int(amt_coin3),
-            price=float_to_str(exch_rate_list[2]))"""
+            price=float_to_str(exch_rate_list[2]))
         notify.send("order2 = client.order_limit_buy(\n\tsymbol=\'"+str(list_of_sym[2])+'\',\n\t'+'quantity='+str(int(amt_coin3))+',\n\t'+'price=\''+float_to_str(exch_rate_list[2])+'\')\n')
 
         while bool(client.get_open_orders(symbol=str(list_of_sym[2]))):
@@ -517,10 +532,10 @@ def profit_cal(list_of_sym,start_amount):
         
         """3TH TRADE"""
         print("order3 = client.order_limit_sell(\n\tsymbol=\'"+str(list_of_sym[1])+'\',\n\t'+'quantity='+str(int(amt_coin3))+',\n\t'+'price=\''+float_to_str(exch_rate_list[1])+'\')\n')
-        """client.order_limit_sell(
+        client.order_limit_sell(
             symbol=str(list_of_sym[1]),
             quantity=int(amt_coin3),
-            price=float_to_str(exch_rate_list[1]))"""
+            price=float_to_str(exch_rate_list[1]))
         notify.send("order3 = client.order_limit_sell(\n\tsymbol=\'"+str(list_of_sym[1])+'\',\n\t'+'quantity='+str(int(amt_coin3))+',\n\t'+'price=\''+float_to_str(exch_rate_list[1])+'\')\n')
 
         while bool(client.get_open_orders(symbol=str(list_of_sym[1]))):
