@@ -21,16 +21,14 @@ notify = LineNotify(ACCESS_TOKEN)
 ctx = decimal.Context()
 # 20 digits should be enough for everyone :D
 ctx.prec = 20
-#api_key = BinanceKey1['api_key']
-#api_secret = BinanceKey1['api_secret']
-
-api_key = 'f7xQybTWPrY20G1NYoW9AE8MF1C5qPk0lS9l7sWUSgWeUaWYBKYVQJLBySnYtkmF'
-api_secret = 'E8jtxPvGiztGlgN9UjSAiO7eNZqI8kpFDYwMJROmtJXf5vonRF02IdCW9yE4Ow9t'
+api_key = BinanceKey1['api_key']
+api_secret = BinanceKey1['api_secret']
 
 client = Client(api_key, api_secret)
 exch_rate_list = []
+qtt_rate_list = []
 tri_sym_list = []
-fee = 0.001
+fee = 0.000
 start_amount = 0
 
 list_of_symbols2 = ['BNBBTC', 'ADABNB', 'ADABTC']
@@ -383,19 +381,20 @@ def run():
             initialize_arb()
             for symlistCnt in list_of_arb_sym:
                 exch_rate_list.clear()
+                qtt_rate_list.clear()
                 os.system('cls')
                 try:
-                    tickers = client.get_orderbook_tickers()
+                    tickers = 0
                     arbitrage_bin(symlistCnt, tickers, 1, 1)
                     if profit_cal(symlistCnt,get_amout()) == True:
                         continue
 
-                    tickers = client.get_orderbook_tickers()
+                    tickers = 0
                     arbitrage_bin_rv(symlistCnt, tickers, 1, 1)
                     if profit_cal_rv(symlistCnt,get_amout()) == True:
                         continue
 
-                    print("(*) Can't Arbitrage")
+                    print("\n(*) ## Can't Arbitrage ##")
                     
                 except Exception as e:
                     print(e)
@@ -407,7 +406,7 @@ def run():
                     pass
                     
                 print('=============NEXT=============\n')
-                #time.sleep(2)
+                #time.sleep(0.1)
                 #input("Press Enter to continue...")
 
         except:
@@ -444,7 +443,7 @@ def initialize_arb():
 def get_amout():
     bnb_balance = float(int(float(client.get_asset_balance(asset='BNB')["free"])*100)/100)
     start_amount = bnb_balance
-    print("start_amount = {} BNB".format(start_amount))
+    #print("start_amount = {} BNB".format(start_amount))
     return start_amount
 
 def profit_cal(list_of_sym,start_amount):
@@ -463,24 +462,24 @@ def profit_cal(list_of_sym,start_amount):
     final_amount_no_fee = amt_coin3_no_fee * float(exch_rate_list[1])
     final_amount_fee = final_amount *fee
     final_amount_adj = final_amount *(1-fee)
-    print('(*) normal solution profit = {} BNB\n\n'.format(final_amount_adj-start_amount))
+    print('(*) normal solution profit = {} BNB'.format(final_amount_adj-start_amount))
 
     if final_amount_adj > start_amount : 
         tri_arb_paper_msg = "\n(*) Starting Amount: "+str(start_amount)+str(list_of_sym[0][0:3])+" "+'\n'
         #Buy Currency 2 with Currency 1
-        tri_arb_paper_msg += "\n"+str(list_of_sym[0][0:3])+"->"+str(list_of_sym[0][3:6])
+        tri_arb_paper_msg += "\n"+str(list_of_sym[0][0:3])+"->"+str(list_of_sym[0][3:6]) + " , price : " + str(exch_rate_list[0])
         tri_arb_paper_msg += "\nAmount Coin 2: "+str(list_of_sym[0][3:6])+" "+str(amt_coin2)
         tri_arb_paper_msg += "\nAmount Coin 2 (no fee): "+str(list_of_sym[0][3:6])+" "+str(amt_coin2_no_fee)
         tri_arb_paper_msg += "\nAmount Coin 2 Fee: "+str(list_of_sym[0][3:6])+" "+str(amt_coin2_fee)
         tri_arb_paper_msg += "\nAmount Coin 2 Adjusted: "+str(list_of_sym[0][3:6])+" "+str(amt_coin2_adj)+'\n'
         #Buy Currency 3 with Currency 2
-        tri_arb_paper_msg += "\n"+str(list_of_sym[0][3:6])+"->"+str(list_of_sym[1][0:3])
+        tri_arb_paper_msg += "\n"+str(list_of_sym[0][3:6])+"->"+str(list_of_sym[1][0:3]) + " , price : " + str(exch_rate_list[1])
         tri_arb_paper_msg += "\nAmount Coin 3: "+str(list_of_sym[1][0:3])+" "+str(amt_coin3) 
         tri_arb_paper_msg += "\nAmount Coin 3 (no fee): "+str(list_of_sym[1][0:3])+" "+str(amt_coin3_no_fee) 
         tri_arb_paper_msg += "\nAmount Coin 3 Fee: "+str(list_of_sym[1][0:3])+" "+str(amt_coin3_fee)
         tri_arb_paper_msg += "\nAmount Coin 3 Adjusted: "+str(list_of_sym[1][0:3])+" "+str(amt_coin3_adj)+'\n'
         #Buy Currency 1 with Currency 3
-        tri_arb_paper_msg += "\n"+str(list_of_sym[1][0:3])+"->"+str(list_of_sym[0][0:3])
+        tri_arb_paper_msg += "\n"+str(list_of_sym[1][0:3])+"->"+str(list_of_sym[0][0:3]) + " , price : " + str(exch_rate_list[2])
         tri_arb_paper_msg += "\nFinal Amount: "+str(list_of_sym[0][0:3])+" "+str(final_amount)
         tri_arb_paper_msg += "\nFinal Amount (No Fee): "+str(list_of_sym[0][0:3])+" "+str(final_amount_no_fee)
         tri_arb_paper_msg += "\nFinal Amount Fee: "+str(list_of_sym[0][0:3])+" "+str(final_amount_fee)
@@ -488,12 +487,18 @@ def profit_cal(list_of_sym,start_amount):
         print(tri_arb_paper_msg)
         notify.send(tri_arb_paper_msg)
 
+        #Quantity check
+        if (amt_coin3 >= qtt_rate_list[1] or amt_coin3 >= qtt_rate_list[2] ):
+            notify.send("QTT Check fail.")
+            pass
+
+
         """1ST TRADE"""
         print("order1 = client.order_limit_sell(\n\tsymbol=\'"+str(list_of_sym[0])+'\',\n\t'+'quantity='+str(start_amount)+',\n\t'+'price=\''+str(float(exch_rate_list[0]))+'\')\n')
-        client.order_limit_sell(
+        """client.order_limit_sell(
             symbol=str(list_of_sym[0]),
             quantity=start_amount,
-            price=str(float(exch_rate_list[0])))  
+            price=str(float(exch_rate_list[0])))  """
         notify.send("order1 = client.order_limit_sell(\n\tsymbol=\'"+str(list_of_sym[0])+'\',\n\t'+'quantity='+str(start_amount)+',\n\t'+'price=\''+str(float(exch_rate_list[0]))+'\')\n')
 
         while bool(client.get_open_orders(symbol=str(list_of_sym[0]))):
@@ -501,10 +506,10 @@ def profit_cal(list_of_sym,start_amount):
         
         """2ND TRADE"""
         print("order2 = client.order_limit_buy(\n\tsymbol=\'"+str(list_of_sym[2])+'\',\n\t'+'quantity='+str(int(amt_coin3))+',\n\t'+'price=\''+float_to_str(exch_rate_list[2])+'\')\n')
-        client.order_limit_buy(
+        """client.order_limit_buy(
             symbol=str(list_of_sym[2]),
             quantity=int(amt_coin3),
-            price=float_to_str(exch_rate_list[2]))
+            price=float_to_str(exch_rate_list[2]))"""
         notify.send("order2 = client.order_limit_buy(\n\tsymbol=\'"+str(list_of_sym[2])+'\',\n\t'+'quantity='+str(int(amt_coin3))+',\n\t'+'price=\''+float_to_str(exch_rate_list[2])+'\')\n')
 
         while bool(client.get_open_orders(symbol=str(list_of_sym[2]))):
@@ -512,15 +517,15 @@ def profit_cal(list_of_sym,start_amount):
         
         """3TH TRADE"""
         print("order3 = client.order_limit_sell(\n\tsymbol=\'"+str(list_of_sym[1])+'\',\n\t'+'quantity='+str(int(amt_coin3))+',\n\t'+'price=\''+float_to_str(exch_rate_list[1])+'\')\n')
-        client.order_limit_sell(
+        """client.order_limit_sell(
             symbol=str(list_of_sym[1]),
             quantity=int(amt_coin3),
-            price=float_to_str(exch_rate_list[1]))
+            price=float_to_str(exch_rate_list[1]))"""
         notify.send("order3 = client.order_limit_sell(\n\tsymbol=\'"+str(list_of_sym[1])+'\',\n\t'+'quantity='+str(int(amt_coin3))+',\n\t'+'price=\''+float_to_str(exch_rate_list[1])+'\')\n')
 
         while bool(client.get_open_orders(symbol=str(list_of_sym[1]))):
             print('.', end = '')
-        time.sleep(3)
+        
         return True
 
     else:
@@ -541,7 +546,7 @@ def profit_cal_rv(list_of_sym,start_amount):
     final_amount_no_fee = amt_coin3_no_fee / float(exch_rate_list[3])
     final_amount_fee = final_amount *fee
     final_amount_adj = final_amount *(1-fee)
-    print('(*) reverse solution profit = {} BNB\n\n'.format(final_amount_adj-start_amount))
+    print('(*) reverse solution profit = {} BNB'.format(final_amount_adj-start_amount))
 
     if final_amount_adj > start_amount :
         tri_arb_paper_msg = "(*) [reverse] Starting Amount: "+str(start_amount)+str(list_of_sym[0][0:3])+" "+'\n'
@@ -591,11 +596,11 @@ def profit_cal_rv(list_of_sym,start_amount):
             price=float_to_str(exch_rate_list[1]))
         while bool(client.get_open_orders(symbol=str(list_of_sym[1][0:3])+str(list_of_sym[0][0:3]))):
             #print('.')"""
-        time.sleep(3)
+        
         return True
 
     else:
-        print("(*) Can't Normal Arbitrage")
+        print("(*) Can't Reverse Arbitrage")
         return False
 
 def arbitrage_bin(list_of_sym, tickers, cycle_num=1, cycle_time=30, place_order='Yes', real_order='Yes'):
@@ -614,24 +619,31 @@ def arbitrage_bin(list_of_sym, tickers, cycle_num=1, cycle_time=30, place_order=
                             depth = client.get_order_book(symbol=sym)
                             if i ==0:
                                 price1 = float(depth['bids'][0][0])
+                                qtt1 = float(depth['bids'][0][1])
                                 exch_rate_list.append(price1)
+                                qtt_rate_list.append(qtt1)
                                 Exch_rate1 = currency_pair+ "Exchange Rate ['bids']: {}".format(depth['bids'][0][0]) +' '
                             if i ==2:
                                 price3 = float(depth['asks'][0][0])
                                 exch_rate_list.append(price3)
+                                qtt3 = float(depth['bids'][0][1])
+                                qtt_rate_list.append(qtt3)
                                 Exch_rate1 = currency_pair+ "Exchange Rate ['asks']: {}".format(depth['asks'][0][0]) +' '
                             print(Exch_rate1)
                         if i == 1:
                             depth = client.get_order_book(symbol=sym)
                             price2 = float(depth['bids'][0][0])
                             exch_rate_list.append(price2)
+                            qtt2 = float(depth['bids'][0][1])
+                            qtt_rate_list.append(qtt2)
                             Exch_rate2 = currency_pair+"Exchange Rate ['bids']: {}".format(depth['bids'][0][0])+' '
                             print(Exch_rate2)
                         i+=1
                     else:
                         exch_rate_list.append(0)
-
+        
                 print(exch_rate_list)
+                print('\n')
 
 def arbitrage_bin_rv(list_of_sym, tickers, cycle_num=1, cycle_time=30, place_order='Yes', real_order='Yes'):
     print("\n(*) [reverse] List of Arbitrage Symbols:", list_of_sym)
