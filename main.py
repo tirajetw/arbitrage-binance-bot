@@ -30,6 +30,7 @@ qtt_rate_list = []
 tri_sym_list = []
 fee = 0.001
 start_amount = 0
+amt_ratio = 0.95 #95%
 
 list_of_symbols2 = ['BNBBTC', 'ADABNB', 'ADABTC']
 list_of_symbols3 = ['BNBBTC', 'ADXBNB', 'ADXBTC']
@@ -449,7 +450,7 @@ def initialize_arb():
         print(e)
         print("\nFAILURE INITIALIZE\n")
         raise
-    time.sleep(3)
+    time.sleep(1)
 
 def get_amout(symlistCnt):
     if symlistCnt[0][0:3] == 'BNB':
@@ -477,6 +478,37 @@ def profit_cal(list_of_sym,start_amount):
     print('(*) normal solution profit = {}'.format(final_amount_adj-start_amount))
 
     if final_amount_adj > start_amount : 
+        #Quantity check
+        qtt_status = True
+        if (amt_coin3 >= qtt_rate_list[1]):
+            print("Order3 is check fail. Calculate again..")
+            start_amount = start_amount * (qtt_rate_list[1]/amt_coin3) * amt_ratio
+            qtt_status = False
+        if (amt_coin3 >= qtt_rate_list[2]):
+            print("Order2 is check fail. Calculate again..")
+            start_amount = start_amount * (qtt_rate_list[2]/amt_coin3) * amt_ratio
+            qtt_status = False
+        if qtt_status == False:
+            start_amount = float(int(float(start_amount)*100)/100)
+            print("Volume check is fail, Calculate again..")
+            print('(New) Start amount = {}'.format(start_amount))
+            notify.send("Volume check is fail, Calculate again..")
+            notify.send('(New) Start amount = {}'.format(start_amount))
+            amt_coin2 = start_amount * float(exch_rate_list[0])
+            amt_coin2_no_fee = amt_coin2
+            amt_coin2_fee = amt_coin2*fee
+            amt_coin2_adj = amt_coin2*(1-fee)
+            amt_coin3 = amt_coin2_adj / float(exch_rate_list[2])
+            amt_coin3 = int(amt_coin3)
+            amt_coin3_no_fee = amt_coin2_no_fee/float(exch_rate_list[2])
+            amt_coin3_fee = amt_coin3 * fee
+            amt_coin3_adj = amt_coin3*(1-fee)
+            amt_coin3_adj = amt_coin3_adj
+            final_amount = amt_coin3_adj * float(exch_rate_list[1])
+            final_amount_no_fee = amt_coin3_no_fee * float(exch_rate_list[1])
+            final_amount_fee = final_amount *fee
+            final_amount_adj = final_amount *(1-fee)
+
         notify.send('(*) normal solution profit = {}'.format(final_amount_adj-start_amount))
         tri_arb_paper_msg = "\n(*) Starting Amount: "+str(start_amount)+str(list_of_sym[0][0:3])+" "+'\n'
         #Buy Currency 2 with Currency 1
@@ -499,10 +531,6 @@ def profit_cal(list_of_sym,start_amount):
         tri_arb_paper_msg += "\nFinal Amount Adjusted: "+str(list_of_sym[0][0:3])+" "+str(final_amount_adj)+'\n'
         print(tri_arb_paper_msg)
         notify.send(tri_arb_paper_msg)
-
-        #Quantity check
-        '''if ((amt_coin3 >= qtt_rate_list[1]) or (amt_coin3 >= qtt_rate_list[2])):
-            raise Exception("Volume Check fail.")'''
 
         """1ST TRADE"""
         print("order1 = client.order_limit_sell(\n\tsymbol=\'"+str(list_of_sym[0])+'\',\n\t'+'quantity='+str(start_amount)+',\n\t'+'price=\''+str(float(exch_rate_list[0]))+'\')\n')
@@ -561,6 +589,37 @@ def profit_cal_rv(list_of_sym,start_amount):
     print('(*) reverse solution profit = {}'.format(final_amount_adj-start_amount))
 
     if final_amount_adj > start_amount :
+        #Quantity check
+        qtt_status = True
+        if (amt_coin2 >= qtt_rate_list[1]):
+            print("Order3 is check fail. Calculate again..")
+            start_amount = start_amount * (qtt_rate_list[1]/amt_coin3) * amt_ratio
+            qtt_status = False
+        if (amt_coin2 >= qtt_rate_list[2]):
+            print("Order2 is check fail. Calculate again..")
+            start_amount = start_amount * (qtt_rate_list[2]/amt_coin3) * amt_ratio
+            qtt_status = False
+        if qtt_status == False:
+            start_amount = float(int(float(start_amount)*100)/100)
+            print("Volume check is fail, Calculate again..")
+            print('(New) Start amount = {}'.format(start_amount))
+            notify.send("Volume check is fail, Calculate again..")
+            notify.send('(New) Start amount = {}'.format(start_amount))
+            amt_coin2 = start_amount * float(exch_rate_list[0])
+            amt_coin2_no_fee = amt_coin2
+            amt_coin2_fee = amt_coin2*fee
+            amt_coin2_adj = amt_coin2*(1-fee)
+            amt_coin3 = amt_coin2_adj / float(exch_rate_list[2])
+            amt_coin3 = int(amt_coin3)
+            amt_coin3_no_fee = amt_coin2_no_fee/float(exch_rate_list[2])
+            amt_coin3_fee = amt_coin3 * fee
+            amt_coin3_adj = amt_coin3*(1-fee)
+            amt_coin3_adj = amt_coin3_adj
+            final_amount = amt_coin3_adj * float(exch_rate_list[1])
+            final_amount_no_fee = amt_coin3_no_fee * float(exch_rate_list[1])
+            final_amount_fee = final_amount *fee
+            final_amount_adj = final_amount *(1-fee)
+
         notify.send('(*) reverse solution profit = {}'.format(final_amount_adj-start_amount))
         tri_arb_paper_msg = "(*) [reverse] Starting Amount: "+str(start_amount)+str(list_of_sym[0][0:3])+" "+'\n'
         #Buy Currency 2 with Currency 1
