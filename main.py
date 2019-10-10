@@ -403,8 +403,8 @@ def run():
             for symlistCnt in list_of_arb_sym:
                 exch_rate_list.clear()
                 qtt_rate_list.clear()
-                os.system('cls')
-                
+                #os.system('cls')
+                tickers = client.get_orderbook_tickers()
                 try:
                     print('(*) Arbitrage Bot Status : Running\n')
                     arbitrage_bin(symlistCnt, tickers, 1, 1)
@@ -424,10 +424,15 @@ def run():
                         continue
                     elif str(e) == "float division by zero":
                         continue
+                    elif str(e) == "APIError(code=-1013): Filter failure: MIN_NOTIONAL":
+                        continue
+                    elif str(e) == "APIError(code=-1003): Too many requests; current limit is 1200 requests per 1 MINUTE. Please use the websocket for live updates to avoid polling the API.":
+                        continue
                     elif str(e) == "('Connection aborted.', OSError(\"(10054, 'WSAECONNRESET')\"))":
                         notify.send(symlistCnt[0] + ' ' + symlistCnt[1] + ' ' + symlistCnt[2])
                         notify.send("API Connection aborted.")
                         continue
+
                     #input("Press Enter to continue...")
                     notify.send(symlistCnt[0] + ' ' + symlistCnt[1] + ' ' + symlistCnt[2])
                     notify.send(e)
